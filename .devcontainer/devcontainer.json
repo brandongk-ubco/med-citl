@@ -1,0 +1,43 @@
+{
+	"name": "PYTORCH",
+	"shutdownAction": "none",
+	"build": {
+		"dockerfile": "../Dockerfile",
+	},
+
+	"mounts": [
+		"type=bind,source=/home/${localEnv:USER}/.ssh/id_ed25519,target=/home/vscode/.ssh/id_ed25519,readonly",
+		"type=bind,source=/home/${localEnv:USER}/.ssh/id_ed25519.pub,target=/home/vscode/.ssh/id_ed25519.pub,readonly",
+		"type=bind,source=/home/${localEnv:USER}/.ssh/known_hosts,target=/home/vscode/.ssh/known_hosts",
+		"type=bind,source=/mnt/data,target=/workspaces/med-citl/datasets"
+	],
+
+	"runArgs": [
+		"--gpus=device=0",
+		"--ipc=host",
+	],
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	"postCreateCommand": "pip install --no-deps -r requirements.txt",
+	
+	"customizations": {
+		"vscode": {
+		  "extensions": [
+			"github.copilot",
+			"github.copilot-chat",
+			"ms-python.python",
+			"ms-toolsai.jupyter",
+			"redhat.vscode-yaml",
+			"eamodio.gitlens",
+			"bierner.markdown-mermaid"
+		  ]
+		}
+	  },
+
+	"features": {
+		"ghcr.io/devcontainers/features/git:1": {}
+	},
+	"remoteUser": "vscode"
+}

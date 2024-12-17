@@ -1,0 +1,83 @@
+[tool.poetry]
+name = "citl"
+version = "0.0.0+alpha"
+description = ""
+authors = ["John Brandon Jones <john.brandon.jones@icloud.com>"]
+readme = "README.md"
+packages = [{include = "citl"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+timm = "*"
+albumentations = "*"
+torchvision = "*"
+loguru = "*"
+neptune = "*"
+more_itertools = "*"
+onnx = "*"
+torch-tb-profiler = "*"
+tensorboard = "*"
+onnxruntime = "*"
+blinker = "*"
+pyparsing = "*"
+seaborn = "^0.13.2"
+
+[tool.poetry.group.dev.dependencies]
+typer = "*"
+isort = "*"
+black = "*"
+coverage = "*"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+atomic = true
+profile = "black"
+line_length = 88
+skip_glob = ["tests/data", "profiling", "datasets", "lightning_logs"]
+known_first_party = ["black", "blib2to3", "blackd", "_black_version"]
+
+[tool.pytest.ini_options]
+minversion = "7.4"
+testpaths = [
+    "test"
+]
+addopts = "--strict-config --strict-markers --cov=citl --cov-report term-missing --cov-report xml:coverage.xml"
+xfail_strict = true
+filterwarnings = [
+    "error",
+    # this is mitigated by a try/catch in https://github.com/psf/black/pull/2974/
+    # this ignore can be removed when support for aiohttp 3.7 is dropped.
+    '''ignore:Decorator `@unittest_run_loop` is no longer needed in aiohttp 3\.8\+:DeprecationWarning''',
+    # this is mitigated by a try/catch in https://github.com/psf/black/pull/3198/
+    # this ignore can be removed when support for aiohttp 3.x is dropped.
+    '''ignore:Middleware decorator is deprecated since 4\.0 and its behaviour is default, you can simply remove this decorator:DeprecationWarning''',
+    # aiohttp is using deprecated cgi modules - Safe to remove when fixed:
+    # https://github.com/aio-libs/aiohttp/issues/6905
+    '''ignore:'cgi' is deprecated and slated for removal in Python 3.13:DeprecationWarning''',
+    # Work around https://github.com/pytest-dev/pytest/issues/10977 for Python 3.12
+    '''ignore:(Attribute s|Attribute n|ast.Str|ast.Bytes|ast.NameConstant|ast.Num) is deprecated and will be removed in Python 3.14:DeprecationWarning''',
+    # Will be fixed with aiohttp 3.9.0
+    # https://github.com/aio-libs/aiohttp/pull/7302
+    "ignore:datetime.*utcfromtimestamp\\(\\) is deprecated and scheduled for removal:DeprecationWarning",
+]
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "citl"
+strict = true
+warn_unreachable = true
+implicit_reexport = true
+show_error_codes = true
+show_column_numbers = true
+
+[tool.coverage.report]
+omit = [
+]
+
+[tool.coverage.run]
+relative_files = true
+branch = true
