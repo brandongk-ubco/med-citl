@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision.transforms import functional as F
 from torchvision.transforms import v2
 from rasterio.features import rasterize
+import json
 
 PATH_DATASETS = os.environ.get("PATH_DATASETS", "./")
 
@@ -80,13 +81,24 @@ class PumaTissueDataset(Dataset):
         """
         gdf = gpd.read_file(geojson_path)
         mask = np.zeros((height, width), dtype=np.uint8)
+
+        tissue_map = {
+            "tissue_necrosis": 1,
+            "tissue_tumor": 2,
+            "tissue_stroma": 3,
+            "tissue_blood_vessel": 4,
+            "tissue_epidermis": 5,
+            "tissue_white_background": 0
+        }
+
         for _, row in gdf.iterrows():
             shapes = [(row["geometry"], 1)]
+            classification = json.loads(row["classification"])
             mask = rasterize(
                 shapes,
                 out_shape=(height, width),
                 transform=transform,
-                fill=0,
+                fill=tissue_map[classification["name"]],
                 all_touched=True,
                 dtype=np.uint8,
             )
@@ -120,7 +132,7 @@ class PumaTissueDataModule(L.LightningDataModule):
         self.num_classes = 10
         self.batch_size = batch_size
 
-        self.image_size = 512
+        self.image_size = 1024
 
         self.transform = v2.Compose(
             [
