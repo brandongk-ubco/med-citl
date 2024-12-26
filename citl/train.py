@@ -51,7 +51,7 @@ def train(
         sys.exit(0)
 
     assert os.path.exists(augmentation_policy_path)
-    datamodule = Dataset.get(dataset)(augmentation_policy_path, noise_level=noise_level)
+    datamodule = Dataset.get(dataset)(augmentation_policy_path)
 
     if datamodule.task == "classification":
         net = create_model(

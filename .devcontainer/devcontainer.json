@@ -20,7 +20,7 @@
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
-	"postCreateCommand": "pip install --no-deps -r requirements.txt",
+	"postCreateCommand": "pip install --no-deps -r requirements.txt && python -m pip install --force-reinstall numpy scikit-learn",
 	
 	"customizations": {
 		"vscode": {

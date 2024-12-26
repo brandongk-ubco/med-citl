@@ -21,6 +21,7 @@ class CITLSegmenter(L.LightningModule):
         lr=1e-3,
         lr_method="plateau",
         method="score",
+        loss_function=None,
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["model"])
