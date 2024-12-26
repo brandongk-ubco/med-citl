@@ -10,7 +10,9 @@ from ..utils.visualize_segmentation import visualize_segmentation
 
 
 class Segmenter(L.LightningModule):
-    def __init__(self, model, num_classes, lr=1e-3, lr_method="plateau"):
+    def __init__(
+        self, model, num_classes, lr=1e-3, lr_method="plateau", loss_function=None
+    ):
         super().__init__()
         self.save_hyperparameters(ignore=["model"])
 
@@ -87,22 +89,22 @@ class Segmenter(L.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y, _ = batch
 
-        if self.current_epoch == 0:
-            img, target = x[1, :, :, :], y[1]
-            if img.ndim > 2:
-                img = img.moveaxis(0, -1)
-            img = img - img.min()
-            img = img / img.max()
-            fig = visualize_segmentation(
-                img.detach().cpu(), self.num_classes, mask=target[1:].detach().cpu()
-            )
-            if type(self.trainer.logger) is TensorBoardLogger:
-                self.logger.experiment.add_figure(
-                    "example_image", fig, self.global_step
-                )
-            elif type(self.trainer.logger) is NeptuneLogger:
-                self.logger.experiment["training/example_image"].append(fig)
-            plt.close()
+        # if self.current_epoch == 0:
+        #     img, target = x[1, :, :, :], y[1]
+        #     if img.ndim > 2:
+        #         img = img.moveaxis(0, -1)
+        #     img = img - img.min()
+        #     img = img / img.max()
+        #     fig = visualize_segmentation(
+        #         img.detach().cpu(), self.num_classes, mask=target[1:].detach().cpu()
+        #     )
+        #     if type(self.trainer.logger) is TensorBoardLogger:
+        #         self.logger.experiment.add_figure(
+        #             "example_image", fig, self.global_step
+        #         )
+        #     elif type(self.trainer.logger) is NeptuneLogger:
+        #         self.logger.experiment["training/example_image"].append(fig)
+        #     plt.close()
 
         y_hat = self(x)
         loss = self.loss(y_hat, y)

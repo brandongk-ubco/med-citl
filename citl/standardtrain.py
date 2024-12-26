@@ -25,7 +25,6 @@ from .model.Segmenter import Segmenter
 def standardtrain(
     dataset: Dataset,
     model_name: str,
-    greyscale: bool = False,
     augmentation_policy_path: str = "./policies/noop.yaml",
     lr_method: str = "plateau",
     lr: float = 5e-4,
@@ -48,9 +47,6 @@ def standardtrain(
             in_channels=3,
             classes=datamodule.num_classes,
         )
-
-    if greyscale:
-        net = nn.Sequential(nn.Conv2d(1, 3, 1), net)
 
     if datamodule.task == "classification":
         model = Classifier

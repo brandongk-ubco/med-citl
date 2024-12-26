@@ -1,4 +1,6 @@
+import json
 import os
+import warnings
 
 import albumentations as A
 import geopandas as gpd
@@ -6,11 +8,13 @@ import numpy as np
 import pytorch_lightning as L
 import rasterio
 import torch
+from rasterio.errors import NotGeoreferencedWarning
+from rasterio.features import rasterize
 from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision.transforms import functional as F
 from torchvision.transforms import v2
-from rasterio.features import rasterize
-import json
+
+warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
 
 PATH_DATASETS = os.environ.get("PATH_DATASETS", "./")
 
@@ -35,7 +39,7 @@ class PumaTissueDataset(Dataset):
 
     def __len__(self):
         return len(self.tif_files)
-    
+
     def set_indices(self, train_indices: list[int], val_indices: list[int]) -> None:
         for index in train_indices:
             self.augment_indices[index] = True
@@ -59,9 +63,7 @@ class PumaTissueDataset(Dataset):
         mask = self._geojson_to_mask(geojson_path, transform, height, width)
 
         if self.augment_indices[idx]:
-            augmented = self.augments(
-                image=img.transpose(1, 2, 0), mask=mask
-            )
+            augmented = self.augments(image=img.transpose(1, 2, 0), mask=mask)
             img = augmented["image"]
             mask = augmented["mask"]
         else:
@@ -71,8 +73,8 @@ class PumaTissueDataset(Dataset):
         # Apply transformations
         if self.transform:
             img, mask = self.transform(img, mask)
-
-        return img, mask
+        img = img[:3, :, :]
+        return img, mask, idx
 
     @staticmethod
     def _geojson_to_mask(geojson_path, transform, height, width):
@@ -83,12 +85,12 @@ class PumaTissueDataset(Dataset):
         mask = np.zeros((height, width), dtype=np.uint8)
 
         tissue_map = {
-            "tissue_necrosis": 1,
-            "tissue_tumor": 2,
-            "tissue_stroma": 3,
-            "tissue_blood_vessel": 4,
-            "tissue_epidermis": 5,
-            "tissue_white_background": 0
+            "tissue_white_background": 0,
+            "tissue_stroma": 1,
+            "tissue_blood_vessel": 2,
+            "tissue_tumor": 3,
+            "tissue_epidermis": 4,
+            "tissue_necrosis": 5,
         }
 
         for _, row in gdf.iterrows():
@@ -123,6 +125,7 @@ class PumaTissueDataModule(L.LightningDataModule):
         augmentation_policy_path,
         batch_size: int = 4,
         data_dir: str = PATH_DATASETS,
+        noise_level: float = 0.0,
     ):
         super().__init__()
 
@@ -146,17 +149,19 @@ class PumaTissueDataModule(L.LightningDataModule):
 
     def setup(self, stage=None):
         generator = torch.Generator()
-        generator.manual_seed(42) 
+        generator.manual_seed(42)
 
-        puma_full = PumaTissueDataset(
-            self.data_dir, transform=self.transform
-        )
+        puma_full = PumaTissueDataset(self.data_dir, transform=self.transform)
         train_size = 160
         val_size = 30
         test_size = 15
-        self.puma_train, self.puma_val, self.puma_test = random_split(puma_full, [train_size, val_size, test_size])
-        puma_full.set_indices(self.puma_train.indices, self.puma_val.indices + self.puma_test.indices)
-        puma_full.augments = self.augments            
+        self.puma_train, self.puma_val, self.puma_test = random_split(
+            puma_full, [train_size, val_size, test_size]
+        )
+        puma_full.set_indices(
+            self.puma_train.indices, self.puma_val.indices + self.puma_test.indices
+        )
+        puma_full.augments = self.augments
 
     def debug_dataloader(self):
         return DataLoader(
