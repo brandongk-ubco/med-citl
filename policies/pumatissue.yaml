@@ -1,0 +1,35 @@
+__version__: 1.1.0
+transform:
+  __class_fullname__: Compose
+  p: 1
+  transforms:
+    - __class_fullname__: Rotate
+      p: 0.5
+      limit: 10
+    - __class_fullname__: HorizontalFlip
+      p: 0.5
+    - __class_fullname__: VerticalFlip
+      p: 0.5
+    - __class_fullname__: ElasticTransform
+      p: 0.5
+    - __class_fullname__: GridDistortion
+      num_steps: 5
+      distort_limit: 0.3
+      p: 0.5
+    - __class_fullname__: OpticalDistortion
+      distort_limit: 0.05
+      shift_limit: 0.05
+      p: 0.5
+    - __class_fullname__: RandomBrightnessContrast
+      brightness_limit: 0.2
+      contrast_limit: 0.2
+      p: 0.5
+    - __class_fullname__: GaussianBlur
+      blur_limit: 7
+      p: 0.3
+    - __class_fullname__: ToTensorV2
+      p: 1.0
+  bbox_params: {}
+  keypoint_params: {}
+  additional_targets:
+    mask: mask

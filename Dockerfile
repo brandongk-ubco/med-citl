@@ -1,7 +1,7 @@
 ARG PYTHON_VERSION=3.12
-ARG PYTORCH_VERSION=2.4
-ARG CUDA_VERSION=12.1.0
-ARG LIGHTNING_VERSION=2.4.0
+ARG PYTORCH_VERSION=2.5
+ARG CUDA_VERSION=12.1.1
+ARG LIGHTNING_VERSION=2.5.0
 
 FROM pytorchlightning/pytorch_lightning:${LIGHTNING_VERSION}-py${PYTHON_VERSION}-torch${PYTORCH_VERSION}-cuda${CUDA_VERSION}
 ENV POETRY_VIRTUALENVS_CREATE=false
@@ -13,10 +13,6 @@ RUN id -u vscode &>/dev/null || \
     (useradd -ms /bin/bash vscode && echo 'vscode ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers)
 
 RUN apt-get clean
-
-RUN apt-get update && \
-    apt-get install --reinstall -y libpython3.12-minimal && \
-    apt-get install -f -y
 
 RUN apt remove -y python3-blinker
 RUN python -m pip install --upgrade pip

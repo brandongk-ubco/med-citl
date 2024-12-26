@@ -52,7 +52,8 @@ class PumaTissueDataset(Dataset):
         tif_path = os.path.join(self.tif_folder, self.tif_files[idx])
         with rasterio.open(tif_path) as src:
             img = src.read().astype(np.uint8)
-
+            img = img[:3, :, :]
+            
         # Load .geojson files and create masks
         geojson_path = os.path.join(self.geojson_folder, self.geojson_files[idx])
 
@@ -73,7 +74,7 @@ class PumaTissueDataset(Dataset):
         # Apply transformations
         if self.transform:
             img, mask = self.transform(img, mask)
-        img = img[:3, :, :]
+        
         return img, mask, idx
 
     @staticmethod
@@ -124,7 +125,7 @@ class PumaTissueDataModule(L.LightningDataModule):
     def __init__(
         self,
         augmentation_policy_path,
-        batch_size: int = 4,
+        batch_size: int = 2,
         data_dir: str = PATH_DATASETS,
         noise_level: float = 0.0,
     ):
@@ -133,7 +134,7 @@ class PumaTissueDataModule(L.LightningDataModule):
         assert os.path.exists(augmentation_policy_path)
         self.augments = A.load(augmentation_policy_path, data_format="yaml")
         self.data_dir = data_dir
-        self.num_classes = 10
+        self.num_classes = len(self.classes)
         self.batch_size = batch_size
 
         self.image_size = 1024
@@ -145,6 +146,7 @@ class PumaTissueDataModule(L.LightningDataModule):
                     self.image_size, max_size=self.image_size + 1, antialias=False
                 ),
                 v2.CenterCrop(self.image_size),
+                v2.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
             ]
         )
 

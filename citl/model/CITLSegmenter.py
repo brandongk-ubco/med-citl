@@ -222,6 +222,7 @@ class CITLSegmenter(L.LightningModule):
         self.val_batch_idx_fit_uncertainty = (
             len(self.trainer.datamodule.val_dataloader()) // 10
         )
+        self.val_batch_idx_fit_uncertainty = max(self.val_batch_idx_fit_uncertainty, 2)
 
     def validation_step(self, batch, batch_idx):
         x, y, _ = batch

@@ -101,7 +101,7 @@ def train(
     )
     if os.environ.get("NEPTUNE_API_TOKEN"):
         trainer_logger = NeptuneLogger(
-            project="med-citl/citl",
+            project="conformal-in-the-loop/med-citl",
             name=f"{model_name}-{dataset}",
             api_key=os.environ["NEPTUNE_API_TOKEN"],
         )
@@ -162,6 +162,7 @@ def train(
         max_epochs=sys.maxsize,
         deterministic=True,
         callbacks=callbacks,
+        accumulate_grad_batches=4,
         log_every_n_steps=10,
     )
 
