@@ -109,10 +109,11 @@ class PumaTissueDataset(Dataset):
 
 class PumaTissueDataModule(L.LightningDataModule):
     classes = [
-        "tumor",
+        "background",
         "stroma",
-        "vessel",
-        "epithelium",
+        "blood_vessel",
+        "tumor",
+        "epidermis",
         "necrosis",
     ]
 
