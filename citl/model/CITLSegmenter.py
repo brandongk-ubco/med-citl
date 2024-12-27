@@ -296,22 +296,23 @@ class CITLSegmenter(L.LightningModule):
         )
         self.log_dict(metrics, on_epoch=True, on_step=False)
 
-        img, target = x[1, :, :, :], y[1]
-        if img.ndim > 2:
-            img = img.moveaxis(0, -1)
-        img = img - img.min()
-        img = img / img.max()
-        fig = visualize_segmentation(
-            img.detach().cpu(),
-            self.num_classes,
-            mask=target.detach().cpu(),
-            prediction=y_hat[1, :, :, :].detach().cpu(),
-        )
-        if type(self.trainer.logger) is TensorBoardLogger:
-            self.logger.experiment.add_figure("test_image", fig, self.global_step)
-        elif type(self.trainer.logger) is NeptuneLogger:
-            self.logger.experiment["training/test_image"].append(fig)
-        plt.close()
+        for idx in range(len(y)):
+            img, target = x[idx, :, :, :], y[idx]
+            if img.ndim > 2:
+                img = img.moveaxis(0, -1)
+            img = img - img.min()
+            img = img / img.max()
+            fig = visualize_segmentation(
+                img.detach().cpu(),
+                self.num_classes,
+                mask=target.detach().cpu(),
+                prediction=y_hat[idx, :, :, :].detach().cpu(),
+            )
+            if type(self.trainer.logger) is TensorBoardLogger:
+                self.logger.experiment.add_figure("test_image", fig, self.global_step)
+            elif type(self.trainer.logger) is NeptuneLogger:
+                self.logger.experiment["training/test_image"].append(fig)
+            plt.close()
 
         self.test_jaccard.update(y_hat, y)
 
