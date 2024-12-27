@@ -104,6 +104,7 @@ def train(
             project="conformal-in-the-loop/med-citl",
             name=f"{model_name}-{dataset}",
             api_key=os.environ["NEPTUNE_API_TOKEN"],
+            mode="sync",
         )
         trainer_logger.experiment["parameters/architecture"] = model_name
         trainer_logger.experiment["parameters/dataset"] = dataset
@@ -145,7 +146,6 @@ def train(
         )
 
     callbacks = [
-        LearningRateMonitor(logging_interval="step"),
         ModelCheckpoint(**model_callback_config),
         EarlyStopping(
             monitor=(

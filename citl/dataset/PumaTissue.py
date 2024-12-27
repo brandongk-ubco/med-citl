@@ -53,7 +53,7 @@ class PumaTissueDataset(Dataset):
         with rasterio.open(tif_path) as src:
             img = src.read().astype(np.uint8)
             img = img[:3, :, :]
-            
+
         # Load .geojson files and create masks
         geojson_path = os.path.join(self.geojson_folder, self.geojson_files[idx])
 
@@ -74,7 +74,7 @@ class PumaTissueDataset(Dataset):
         # Apply transformations
         if self.transform:
             img, mask = self.transform(img, mask)
-        
+
         return img, mask, idx
 
     @staticmethod
@@ -146,7 +146,7 @@ class PumaTissueDataModule(L.LightningDataModule):
                     self.image_size, max_size=self.image_size + 1, antialias=False
                 ),
                 v2.CenterCrop(self.image_size),
-                v2.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+                v2.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
             ]
         )
 

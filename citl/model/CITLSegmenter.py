@@ -107,7 +107,10 @@ class CITLSegmenter(L.LightningModule):
             img = img - img.min()
             img = img / img.max()
             fig = visualize_segmentation(
-                img.detach().cpu(), self.num_classes, mask=target[1:].detach().cpu()
+                img.detach().cpu(),
+                self.num_classes,
+                mask=target.detach().cpu(),
+                prediction=y_hat[1, :, :, :].detach().cpu(),
             )
             if type(self.trainer.logger) is TensorBoardLogger:
                 self.logger.experiment.add_figure(
@@ -293,6 +296,23 @@ class CITLSegmenter(L.LightningModule):
         )
         self.log_dict(metrics, on_epoch=True, on_step=False)
 
+        img, target = x[1, :, :, :], y[1]
+        if img.ndim > 2:
+            img = img.moveaxis(0, -1)
+        img = img - img.min()
+        img = img / img.max()
+        fig = visualize_segmentation(
+            img.detach().cpu(),
+            self.num_classes,
+            mask=target.detach().cpu(),
+            prediction=y_hat[1, :, :, :].detach().cpu(),
+        )
+        if type(self.trainer.logger) is TensorBoardLogger:
+            self.logger.experiment.add_figure("test_image", fig, self.global_step)
+        elif type(self.trainer.logger) is NeptuneLogger:
+            self.logger.experiment["training/test_image"].append(fig)
+        plt.close()
+
         self.test_jaccard.update(y_hat, y)
 
         self.log("test_loss", test_loss, on_epoch=True, on_step=False)
@@ -300,7 +320,7 @@ class CITLSegmenter(L.LightningModule):
     def on_test_epoch_end(self):
         jacs = self.test_jaccard.compute()
         self.log(
-            "test_jaccard",
+            "test_jaccard_",
             torch.mean(jacs[1:]),
             on_epoch=True,
             on_step=False,
@@ -308,7 +328,7 @@ class CITLSegmenter(L.LightningModule):
         self.log_dict(
             dict(
                 zip(
-                    [f"test_jaccard{c}" for c in self.trainer.datamodule.classes[1:]],
+                    [f"test_jaccard_{c}" for c in self.trainer.datamodule.classes[1:]],
                     jacs[1:],
                 )
             ),

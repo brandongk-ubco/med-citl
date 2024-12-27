@@ -25,7 +25,7 @@ transform:
       contrast_limit: 0.2
       p: 0.5
     - __class_fullname__: GaussianBlur
-      blur_limit: 7
+      blur_limit: [3, 7]
       p: 0.3
     - __class_fullname__: ToTensorV2
       p: 1.0

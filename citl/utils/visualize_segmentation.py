@@ -21,6 +21,8 @@ def visualize_segmentation(
 
     num_classes = num_classes
 
+    cmap = plt.cm.get_cmap("jet", num_classes)
+
     image = image / image.max()
     image = image - image.min()
 
@@ -33,8 +35,7 @@ def visualize_segmentation(
     else:
         mode = "rowwise"
 
-    background_mask = mask == 0
-    mask = np.ma.masked_where(~background_mask, mask)
+    mask = np.ma.masked_where(mask == 0, mask)
 
     if mode == "colwise":
         plt.subplot(1, num_subplots, subplot)
@@ -49,7 +50,7 @@ def visualize_segmentation(
         raise ValueError(f"Image has invalid shape: {image.shape}")
 
     plt.imshow(
-        mask, cmap="jet", interpolation="none", alpha=0.2, vmin=1, vmax=num_classes
+        mask, cmap=cmap, interpolation="none", alpha=0.5, vmin=1, vmax=num_classes
     )
     plt.grid(False)
     plt.axis("off")
@@ -66,7 +67,8 @@ def visualize_segmentation(
             plt.subplot(num_subplots, 1, subplot)
 
         prediction = prediction.argmax(axis=0)
-        prediction = np.ma.masked_where(~background_mask, prediction)
+
+        prediction = np.ma.masked_where(prediction == 0, prediction)
 
         if image.ndim == 2 or image.shape[-1] == 1:
             plt.imshow(image, cmap="gray")
@@ -77,7 +79,7 @@ def visualize_segmentation(
 
         plt.imshow(
             prediction,
-            cmap="jet",
+            cmap=cmap,
             interpolation="none",
             alpha=0.2,
             vmin=1,
@@ -91,15 +93,9 @@ def visualize_segmentation(
 
     if prediction_set_size is not None:
         uncertain = np.ma.masked_where(
-            np.logical_and(prediction_set_size >= 1, ~background_mask),
+            np.logical_or(prediction_set_size == 1, prediction == 0),
             prediction_set_size,
         )
-
-        atypical = np.ma.masked_where(
-            np.logical_and(prediction_set_size == 0, ~background_mask),
-            np.ones_like(prediction_set_size) * num_classes,
-        )
-
         if mode == "colwise":
             plt.subplot(1, num_subplots, subplot)
         else:
@@ -114,14 +110,6 @@ def visualize_segmentation(
 
         plt.imshow(
             uncertain,
-            cmap="Reds",
-            interpolation="none",
-            alpha=0.5,
-            vmin=1,
-            vmax=num_classes,
-        )
-        plt.imshow(
-            atypical,
             cmap="Reds",
             interpolation="none",
             alpha=0.5,
