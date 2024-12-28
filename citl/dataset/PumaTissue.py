@@ -33,6 +33,10 @@ class PumaTissueDataset(Dataset):
         )
         self.tif_files = sorted(os.listdir(self.tif_folder))
         self.geojson_files = sorted(os.listdir(self.geojson_folder))
+
+        # self.tif_files = ["training_set_primary_roi_030.tif"]
+        # self.geojson_files = ["training_set_primary_roi_030_tissue.geojson"]
+
         self.transform = transform
         self.augment_indices = {}
         self.augments = None
@@ -94,18 +98,24 @@ class PumaTissueDataset(Dataset):
             "tissue_necrosis": 5,
         }
 
+        final_mask = np.zeros((height, width), dtype=np.uint8)
+
         for _, row in gdf.iterrows():
             shapes = [(row["geometry"], 1)]
             classification = json.loads(row["classification"])
-            mask = rasterize(
+            class_value = tissue_map[classification["name"]]
+
+            annotation_mask = rasterize(
                 shapes,
                 out_shape=(height, width),
                 transform=transform,
-                fill=tissue_map[classification["name"]],
+                fill=0,
                 all_touched=True,
                 dtype=np.uint8,
             )
-        return mask
+
+            final_mask[annotation_mask == 1] = class_value
+        return final_mask
 
 
 class PumaTissueDataModule(L.LightningDataModule):
@@ -154,21 +164,34 @@ class PumaTissueDataModule(L.LightningDataModule):
         generator = torch.Generator()
         generator.manual_seed(42)
 
-        puma_full = PumaTissueDataset(self.data_dir, transform=self.transform)
+        self.puma_full = PumaTissueDataset(self.data_dir, transform=self.transform)
         train_size = 160
         val_size = 30
         test_size = 15
         self.puma_train, self.puma_val, self.puma_test = random_split(
-            puma_full, [train_size, val_size, test_size]
+            self.puma_full, [train_size, val_size, test_size]
         )
-        puma_full.set_indices(
+        self.puma_full.set_indices(
             self.puma_train.indices, self.puma_val.indices + self.puma_test.indices
         )
-        puma_full.augments = self.augments
+        self.puma_full.augments = self.augments
+
+    def get_filename(self, idx):
+        return self.puma_full.tif_files[idx]
 
     def debug_dataloader(self):
         return DataLoader(
             self.puma_train,
+            num_workers=0,
+            shuffle=True,
+            batch_size=self.batch_size,
+            persistent_workers=False,
+            drop_last=True,
+        )
+
+    def full_dataloader(self):
+        return DataLoader(
+            self.puma_full,
             num_workers=0,
             shuffle=True,
             batch_size=self.batch_size,
