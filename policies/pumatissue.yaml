@@ -3,6 +3,13 @@ transform:
   __class_fullname__: Compose
   p: 1
   transforms:
+    - __class_fullname__: Rotate
+      p: 0.5
+      limit: 10
+    - __class_fullname__: HorizontalFlip
+      p: 0.5
+    - __class_fullname__: VerticalFlip
+      p: 0.5
     - __class_fullname__: ElasticTransform
       p: 0.5
     - __class_fullname__: GridDistortion

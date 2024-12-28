@@ -131,8 +131,8 @@ def train(
         }
     elif datamodule.task == "segmentation":
         model_callback_config = {
-            "filename": "{epoch}-{val_jaccard:.3f}",
-            "monitor": "val_jaccard",
+            "filename": "{epoch}-{val_dice:.3f}",
+            "monitor": "val_dice",
             "mode": "max",
             "save_top_k": 1,
             "save_last": True,
@@ -149,7 +149,7 @@ def train(
         ModelCheckpoint(**model_callback_config),
         EarlyStopping(
             monitor=(
-                "val_accuracy" if datamodule.task == "classification" else "val_jaccard"
+                "val_accuracy" if datamodule.task == "classification" else "val_dice"
             ),
             mode="max",
             patience=20,
