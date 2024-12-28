@@ -223,13 +223,17 @@ class CITLSegmenter(L.LightningModule):
             len(self.trainer.datamodule.val_dataloader()) // 10
         )
         self.val_batch_idx_fit_uncertainty = max(self.val_batch_idx_fit_uncertainty, 2)
+        self.predictions = []
+        self.ground_truths = []
 
     def validation_step(self, batch, batch_idx):
         x, y, _ = batch
         y_hat = self(x)
 
         val_loss = F.cross_entropy(y_hat, y.long(), reduction="none")[y != 0].mean()
-
+        self.predictions.append(y_hat.argmax(dim=1).long())
+        self.ground_truths.append(y.long())
+        
         if batch_idx < self.val_batch_idx_fit_uncertainty:
             self.conformal_classifier.append(y_hat, y, percentage=0.1)
         elif batch_idx == self.val_batch_idx_fit_uncertainty:
@@ -245,10 +249,12 @@ class CITLSegmenter(L.LightningModule):
             )
             self.log_dict(metrics, on_epoch=True, on_step=False)
 
-        self.val_dice.update(y_hat.argmax(dim=1).long(), y.long())
         self.log("val_loss", val_loss, on_step=False, on_epoch=True)
 
     def on_validation_epoch_end(self):
+        predictions = torch.cat(self.predictions, dim=0)
+        ground_truths = torch.cat(self.ground_truths, dim=0)
+        self.val_dice.update(predictions, ground_truths)
         dice = self.val_dice.compute()
         self.log(
             "val_dice",
