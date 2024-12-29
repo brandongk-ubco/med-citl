@@ -2,7 +2,7 @@ import pytorch_lightning as L
 import torch
 from matplotlib import pyplot as plt
 from pytorch_lightning.loggers import NeptuneLogger, TensorBoardLogger
-from torchmetrics.segmentation import DiceScore
+from torchmetrics.classification import F1Score
 
 # from ..losses.FocalLoss import FocalLoss
 # from ..losses.TverskyLoss import TverskyLoss
@@ -19,22 +19,28 @@ class Segmenter(L.LightningModule):
         self.model = torch.nn.Sequential(torch.nn.InstanceNorm2d(3), model)
 
         self.num_classes = num_classes
-        self.dice = DiceScore(
+        self.dice = F1Score(
+            task="multiclass",
             num_classes=num_classes,
             average="none",
-            include_background=False,
+            ignore_index=0,
+            zero_division=1.0,
         )
 
-        self.val_dice = DiceScore(
+        self.val_dice = F1Score(
+            task="multiclass",
             num_classes=num_classes,
             average="none",
-            include_background=False,
+            ignore_index=0,
+            zero_division=1.0,
         )
 
-        self.test_dice = DiceScore(
+        self.test_dice = F1Score(
+            task="multiclass",
             num_classes=num_classes,
             average="none",
-            include_background=False,
+            ignore_index=0,
+            zero_division=1.0,
         )
 
         self.lr = lr
