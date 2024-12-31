@@ -321,7 +321,7 @@ class CITLSegmenter(L.LightningModule):
     def on_test_epoch_end(self):
         dice = self.test_dice.compute()
         self.log(
-            "test_dice_",
+            "test_dice",
             torch.mean(dice[1:]),
             on_epoch=True,
             on_step=False,

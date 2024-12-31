@@ -16,7 +16,7 @@ class Segmenter(L.LightningModule):
         super().__init__()
         self.save_hyperparameters(ignore=["model"])
 
-        self.model = torch.nn.Sequential(torch.nn.InstanceNorm2d(3), model)
+        self.model = model
 
         self.num_classes = num_classes
         self.dice = F1Score(
