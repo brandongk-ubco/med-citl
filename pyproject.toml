@@ -31,6 +31,9 @@ jupyter = "^1.1.1"
 ipywidgets = "^8.1.5"
 torchmetrics = "1.6.0"
 torch = { version = "2.5.1", markers = "sys_platform != 'system'" }
+einops = "^0.8.0"
+einops-exts = "^0.0.4"
+python-dotenv = "^1.0.1"
 
 [tool.poetry.group.dev.dependencies]
 typer = "*"
@@ -38,6 +41,12 @@ isort = "*"
 black = {extras = ["jupyter"], version = "^24.10.0"}
 coverage = "*"
 
+
+
+[[tool.poetry.source]]
+name = "pypi-uv"
+url = "https://pypi.org/simple/"
+priority = "explicit"
 
 [build-system]
 requires = ["poetry-core"]

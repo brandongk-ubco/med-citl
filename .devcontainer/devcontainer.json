@@ -2,7 +2,7 @@
 	"name": "PYTORCH",
 	"shutdownAction": "none",
 	"build": {
-		"dockerfile": "../Dockerfile",
+		"dockerfile": "../Dockerfile"
 	},
 
 	"mounts": [
@@ -14,13 +14,13 @@
 
 	"runArgs": [
 		"--gpus=device=0",
-		"--ipc=host",
+		"--ipc=host"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
-	"postCreateCommand": "pip install --no-deps -r requirements.txt && python -m pip install --force-reinstall numpy scikit-learn",
+	// "postCreateCommand": "",
 	
 	"customizations": {
 		"vscode": {
@@ -31,7 +31,18 @@
 			"ms-toolsai.jupyter",
 			"redhat.vscode-yaml",
 			"eamodio.gitlens",
-			"bierner.markdown-mermaid"
+			"bierner.markdown-mermaid",
+			"ms-azuretools.vscode-docker",
+			"ms-python.black-formatter",
+			"ms-python.pylint",
+			"ms-python.isort",
+			"njpwerner.autodocstring",
+			"tamasfe.even-better-toml",
+			"ms-python.vscode-pylance",
+			"charliermarsh.ruff",
+			"ms-toolsai.jupyter-renderers",
+			"ms-toolsai.vscode-jupyter-cell-tags",
+			"ms-toolsai.jupyter-keymap"
 		  ]
 		}
 	  },
