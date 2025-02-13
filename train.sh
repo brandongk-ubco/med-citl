@@ -5,7 +5,7 @@ set -eux
 # rm -rf lightning_logs
 # rm .*.ckpt || true
 
-python -m citl standardtrain PumaTissue mit_b4 \
+python -m citl train PumaTissue hf-hub:MahmoodLab/UNI2-h \
     "--augmentation-policy-path=./policies/pumatissue.yaml" \
     "--lr-method=plateau"
 

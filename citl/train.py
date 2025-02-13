@@ -8,6 +8,7 @@ import tempfile
 
 import pytorch_lightning as L
 import segmentation_models_pytorch as smp
+from .SegmentationModel import Unet
 import torch
 from loguru import logger
 from neptune.types import File
@@ -17,8 +18,7 @@ from pytorch_lightning.callbacks import (
     ModelCheckpoint,
 )
 from pytorch_lightning.loggers import NeptuneLogger, TensorBoardLogger
-from timm import create_model
-from torch import nn
+from timm import create_model, layers
 
 from citl import cli
 
@@ -53,16 +53,37 @@ def train(
     assert os.path.exists(augmentation_policy_path)
     datamodule = Dataset.get(dataset)(augmentation_policy_path)
 
-    if datamodule.task == "classification":
-        net = create_model(
-            model_name,
-            num_classes=datamodule.num_classes,
-            drop_rate=0.2,
-            pretrained=pretrained,
-        )
-    elif datamodule.task == "segmentation":
-        net = smp.Unet(
-            encoder_name=model_name,
+    timm_kwargs = {
+            'img_size': 224, 
+            'patch_size': 14, 
+            'depth': 24,
+            'num_heads': 24,
+            'init_values': 1e-5, 
+            'embed_dim': 1536,
+            'mlp_ratio': 2.66667*2,
+            'no_embed_class': True,
+            'mlp_layer': layers.SwiGLUPacked, 
+            'act_layer': torch.nn.SiLU, 
+            'reg_tokens': 8, 
+            'dynamic_img_size': True
+        }
+
+    net = create_model(
+        model_name,
+        drop_rate=0.2,
+        pretrained=pretrained,
+        **timm_kwargs
+    )
+
+    img = torch.rand(1, 3, 224, 224)
+    with torch.inference_mode():
+        result = net(img)
+    import pdb
+    pdb.set_trace()
+
+    if datamodule.task == "segmentation":
+        net = Unet(
+            encoder=net,
             in_channels=3,
             classes=datamodule.num_classes,
         )
