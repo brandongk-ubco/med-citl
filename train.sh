@@ -7,21 +7,6 @@ rm .*.ckpt || true
 
 export $(cat .env | xargs)
 
-# python -m citl train CelebA resnet18 \
-#     "--selectively-backpropagate" \
-#     "--augmentation-policy-path=./policies/celeba.yaml" \
-#     "--lr-method=plateau"
-
-# STANDARD TRAINING BASELINES
-
-# python -m citl standardtrain CelebA resnet18 \
-#     "--augmentation-policy-path=./policies/celeba.yaml" \
-#     "--lr-method=plateau"
-
-# python -m citl standardtrain DFire mnasnet_small \
-#     "--augmentation-policy-path=./policies/DFire.yaml" \
-#     "--lr-method=plateau"
-
 levels=(0.0 0.1 0.2 0.3 0.4 0.5)
 
 for level in "${levels[@]}"
@@ -32,13 +17,32 @@ do
         "--noise-level=${level}" \
         "--loss-function=cross_entropy" \
         "--margin-weighting" \
-        "--lr-method=plateau"
+        "--lr-method=plateau" \
+        "--no-pretrained"
 
-    # python -m citl standardtrain CIFAR10UB mnasnet_small \
-    #     "--augmentation-policy-path=./policies/cifar10.yaml" \
-    #     "--noise-level=${level}" \
-    #     "--loss-function=focal" \
-    #     "--lr-method=plateau"
+    python -m citl standardtrain CIFAR10UB mnasnet_small \
+        "--augmentation-policy-path=./policies/cifar10.yaml" \
+        "--noise-level=${level}" \
+        "--loss-function=cross_entropy" \
+        "--no-margin-weighting" \
+        "--lr-method=plateau" \
+        "--no-pretrained"
+
+    python -m citl standardtrain CIFAR10UB mnasnet_small \
+        "--augmentation-policy-path=./policies/cifar10.yaml" \
+        "--noise-level=${level}" \
+        "--loss-function=focal" \
+        "--no-margin-weighting" \
+        "--lr-method=plateau" \
+        "--no-pretrained"
+
+    python -m citl train CIFAR10UB mnasnet_small \
+        "--augmentation-policy-path=./policies/cifar10.yaml" \
+        "--noise-level=${level}" \
+        "--loss-function=cross_entropy" \
+        "--lr-method=plateau" \
+        "--selectively-backpropagate" \
+        "--no-pretrained"
 done
 
 # python -m citl standardtrain CityscapesFine efficientnet-b0 \

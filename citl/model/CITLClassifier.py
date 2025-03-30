@@ -348,7 +348,6 @@ class CITLClassifier(L.LightningModule):
                 factor=0.2,
                 patience=10,
                 min_lr=1e-6,
-                verbose=True,
             )
             interval = "epoch"
 

@@ -106,7 +106,7 @@ def train(
     )
     if os.environ.get("NEPTUNE_API_TOKEN"):
         trainer_logger = NeptuneLogger(
-            project="conformal-in-the-loop/citl",
+            project="conformal-in-the-loop/med-citl",
             name=f"{model_name}-{dataset}",
             api_key=os.environ["NEPTUNE_API_TOKEN"],
         )
