@@ -15,7 +15,6 @@ dependencies = [
     "onnx",
     "torch-tb-profiler",
     "tensorboard",
-    "typer",
     "onnxruntime",
     "blinker",
     "pyparsing",
