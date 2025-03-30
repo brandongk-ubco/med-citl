@@ -78,16 +78,6 @@ name = "pytorch"
 url = "https://download.pytorch.org/whl/"
 explicit = true
 
-[tool.hatch.build.targets.sdist]
-include = ["citl"]
-
-[tool.hatch.build.targets.wheel]
-include = ["citl"]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [tool.isort]
 atomic = true
 profile = "black"
