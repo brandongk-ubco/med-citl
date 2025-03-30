@@ -89,6 +89,8 @@ def standardtrain(
         trainer_logger.experiment["parameters/loss_function"] = loss_function
         trainer_logger.experiment["parameters/noise_level"] = noise_level
         trainer_logger.experiment["parameters/margin_weighting"] = margin_weighting
+        if margin_weighting:
+            trainer_logger.experiment["sys/tags"].add("Margin Weighting")
         trainer_logger.experiment["sys/tags"].add(model_name)
         trainer_logger.experiment["sys/tags"].add(dataset)
         trainer_logger.experiment["sys/tags"].add("Standard")
