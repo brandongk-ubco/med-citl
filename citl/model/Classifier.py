@@ -1,13 +1,5 @@
-from statistics import mean
-
-import numpy as np
-import pandas as pd
 import pytorch_lightning as L
-import seaborn as sns
 import torch
-import torch.nn.functional as F
-from matplotlib import pyplot as plt
-from pytorch_lightning.loggers import NeptuneLogger, TensorBoardLogger
 from torchmetrics.classification.accuracy import Accuracy
 
 from ..losses.FocalLoss import FocalLoss

@@ -1,10 +1,7 @@
 import os
 
-import cv2
 import pytorch_lightning as L
-import torch
 from torch.utils.tensorboard import SummaryWriter
-from torchvision.utils import make_grid
 
 from citl import cli
 

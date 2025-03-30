@@ -1,7 +1,8 @@
 from citl.dataset import Dataset
-import os 
+import os
 
 current_path = os.path.dirname(os.path.realpath(__file__))
+
 
 def test_remove_data():
     augmentation_policy_path = os.path.join(current_path, "..", "policies", "noop.yaml")

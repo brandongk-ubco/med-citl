@@ -1,13 +1,12 @@
-import numpy as np
 import torch
-import os 
+import os
 
 from citl.utils import sample_tensors
 
 CURRENT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
 
-class TestSampleTensors:
 
+class TestSampleTensors:
     def test_sample_empty_tensors(self):
         t1 = torch.tensor([])
         t2 = torch.tensor([])

@@ -5,7 +5,6 @@ import albumentations as A
 import numpy as np
 import pytorch_lightning as L
 import torch
-import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torchvision.datasets import CelebA as BaseDataset
 from torchvision.transforms import v2
@@ -14,7 +13,6 @@ PATH_DATASETS = os.environ.get("PATH_DATASETS", "./")
 
 
 class CelebA(BaseDataset):
-
     def __init__(self, *args, **kwargs):
         self.resize = kwargs.pop("resize")
         super().__init__(*args, **kwargs)
@@ -72,7 +70,6 @@ PATH_DATASETS = os.environ.get("PATH_DATASETS", "./")
 
 
 class CelebADataModule(L.LightningDataModule):
-
     classes = [
         "Men - Not Wavy",
         "Men - Wavy",

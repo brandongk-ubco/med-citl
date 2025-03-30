@@ -7,7 +7,7 @@ requires-python = "~=3.12"
 readme = "README.md"
 dependencies = [
     "timm",
-    "albumentations==2.0.4",
+    "albumentations>=2.0.4",
     "torchvision",
     "loguru",
     "neptune",
@@ -15,6 +15,7 @@ dependencies = [
     "onnx",
     "torch-tb-profiler",
     "tensorboard",
+    "typer",
     "onnxruntime",
     "blinker",
     "pyparsing",
@@ -52,9 +53,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "typer",
-    "isort",
-    "black[jupyter]>=24.10.0,<25",
+    "ruff",
     "coverage",
 ]
 

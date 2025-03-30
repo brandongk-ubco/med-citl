@@ -5,7 +5,6 @@ import albumentations as A
 import numpy as np
 import pytorch_lightning as L
 import torch
-from albumentations.pytorch import ToTensorV2
 from torch.utils.data import DataLoader, random_split
 from torch.utils.data.dataset import Subset
 from torchvision.datasets import Cityscapes as BaseDataset

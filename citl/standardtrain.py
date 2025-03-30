@@ -4,7 +4,6 @@ import sys
 import pytorch_lightning as L
 import segmentation_models_pytorch as smp
 import torch
-from loguru import logger
 from pytorch_lightning.callbacks import (
     EarlyStopping,
     LearningRateMonitor,
@@ -12,7 +11,6 @@ from pytorch_lightning.callbacks import (
 )
 from pytorch_lightning.loggers import NeptuneLogger, TensorBoardLogger
 from timm import create_model
-from torch import nn
 
 from citl import cli
 

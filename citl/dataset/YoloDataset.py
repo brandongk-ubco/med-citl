@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 import torch
-from PIL import Image
 from torch.utils.data import Dataset
 
 
@@ -23,7 +22,6 @@ class YoloDataset(Dataset):
         return len(self.image_files)
 
     def __getitem__(self, idx):
-
         image = self.images[idx]
 
         boxes = []

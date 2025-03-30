@@ -2,7 +2,6 @@ import pandas as pd
 import pytorch_lightning as L
 import seaborn as sns
 import torch
-import torch.nn.functional as F
 from matplotlib import pyplot as plt
 from pytorch_lightning.loggers import NeptuneLogger, TensorBoardLogger
 from torchmetrics.classification.accuracy import Accuracy
@@ -211,7 +210,7 @@ class CITLClassifier(L.LightningModule):
         sns_plot.set_title(
             f"Mean Weighting of Each Class (epoch: {self.current_epoch + 1})"
         )
-        sns_plot.set_xlabel(f"Class")
+        sns_plot.set_xlabel("Class")
         sns_plot.set_ylabel("Mean Weighting")
         plt.xticks(rotation=90)
         plt.tight_layout()

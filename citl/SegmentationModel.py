@@ -1,7 +1,6 @@
 from typing import Any, Optional, Union, Tuple, Callable
 
 from segmentation_models_pytorch.base import (
-    ClassificationHead,
     SegmentationHead,
     SegmentationModel,
 )
@@ -86,7 +85,6 @@ class Unet(SegmentationModel):
             activation=activation,
             kernel_size=3,
         )
-
 
         self.classification_head = None
 

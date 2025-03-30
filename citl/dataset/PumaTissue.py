@@ -11,7 +11,6 @@ import torch
 from rasterio.errors import NotGeoreferencedWarning
 from rasterio.features import rasterize
 from torch.utils.data import DataLoader, Dataset, random_split
-from torchvision.transforms import functional as F
 from torchvision.transforms import v2
 
 warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)

@@ -201,7 +201,7 @@ class CITLSegmenter(L.LightningModule):
         sns_plot.set_title(
             f"Mean Weighting of Each Class (epoch: {self.current_epoch + 1})"
         )
-        sns_plot.set_xlabel(f"Class")
+        sns_plot.set_xlabel("Class")
         sns_plot.set_ylabel("Mean Weighting")
         plt.xticks(rotation=90)
         plt.tight_layout()

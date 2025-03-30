@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 
 
 class TverskyLoss(torch.nn.Module):
@@ -17,7 +16,6 @@ class TverskyLoss(torch.nn.Module):
         self.gamma = gamma
 
     def forward(self, inputs, targets):
-
         # flatten label and prediction tensors
         inputs = inputs.view(-1)
         targets = targets.view(-1)

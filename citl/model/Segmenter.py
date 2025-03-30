@@ -1,12 +1,9 @@
 import pytorch_lightning as L
 import torch
-from matplotlib import pyplot as plt
-from pytorch_lightning.loggers import NeptuneLogger, TensorBoardLogger
 from torchmetrics.classification import F1Score
 
 # from ..losses.FocalLoss import FocalLoss
 # from ..losses.TverskyLoss import TverskyLoss
-from ..utils.visualize_segmentation import visualize_segmentation
 
 
 class Segmenter(L.LightningModule):

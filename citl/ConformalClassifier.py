@@ -30,7 +30,6 @@ def reduce_correct(example):
 
 
 class ConformalClassifier:
-
     def __init__(self, method="score", ignore_index=None):
         self.method = method
         self.reset()
@@ -41,7 +40,6 @@ class ConformalClassifier:
         self.val_labels = []
 
     def append(self, y_hat, y, percentage=1.0):
-
         if torch.is_tensor(y_hat):
             y_hat = y_hat.detach()
         if torch.is_tensor(y):
@@ -71,7 +69,6 @@ class ConformalClassifier:
         self.val_labels.append(y)
 
     def fit(self, alphas=[0.1]):
-
         self.cp_examples = torch.concatenate(self.cp_examples, axis=0)
         self.val_labels = torch.concatenate(self.val_labels, axis=0)
 

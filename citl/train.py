@@ -8,7 +8,6 @@ import tempfile
 
 import pytorch_lightning as L
 import segmentation_models_pytorch as smp
-from .SegmentationModel import Unet
 import torch
 from loguru import logger
 from neptune.types import File
@@ -18,9 +17,7 @@ from pytorch_lightning.callbacks import (
     ModelCheckpoint,
 )
 from pytorch_lightning.loggers import NeptuneLogger, TensorBoardLogger
-from timm import create_model, layers
-from transformers import AutoModel 
-
+from timm import create_model
 
 from citl import cli
 
@@ -53,57 +50,24 @@ def train(
         sys.exit(0)
 
     assert os.path.exists(augmentation_policy_path)
-    datamodule = Dataset.get(dataset)(augmentation_policy_path)
+    if dataset == "CIFAR10UB":
+        datamodule = Dataset.get(dataset)(
+            augmentation_policy_path, noise_level=noise_level
+        )
+    else:
+        assert noise_level == 0.0, "Noise level is only supported for CIFAR10UB"
+        datamodule = Dataset.get(dataset)(augmentation_policy_path)
 
-    titan = AutoModel.from_pretrained('MahmoodLab/TITAN', trust_remote_code=True)
-    conch, eval_transform = titan.return_conch()
-    children = list(conch.children())
-    # encoder = torch.nn.Sequential(*children[:-2])
-
-    # tile_encoder = create_model("hf_hub:prov-gigapath/prov-gigapath", pretrained=True)
-
-    # timm_kwargs = {
-    #         'img_size': 224, 
-    #         'patch_size': 14, 
-    #         'depth': 24,
-    #         'num_heads': 24,
-    #         'init_values': 1e-5, 
-    #         'embed_dim': 1536,
-    #         'mlp_ratio': 2.66667*2,
-    #         'no_embed_class': True,
-    #         'mlp_layer': layers.SwiGLUPacked, 
-    #         'act_layer': torch.nn.SiLU, 
-    #         'reg_tokens': 8, 
-    #         'dynamic_img_size': True
-    #     }
-
-    # net = create_model(
-    #     model_name,
-    #     drop_rate=0,
-    #     pretrained=pretrained,
-    #     **timm_kwargs
-    # )
-
-    # img224 = torch.rand(1, 3, 224, 224)
-    # img512 = torch.rand(1, 3, 512, 512)
-    # img1024 = torch.rand(1, 3, 1024, 1024)
-
-    # net: 224x224 (UNI2-h)
-    # conch: ANYxANY (TITAN)
-    # tile_encoder: 224x224 (GigaPath)
-
-    import pdb
-    pdb.set_trace()
-
-
-    with torch.inference_mode():
-        result = conch(img224)
-    import pdb
-    pdb.set_trace()
-
-    if datamodule.task == "segmentation":
-        net = Unet(
-            encoder=net,
+    if datamodule.task == "classification":
+        net = create_model(
+            model_name,
+            num_classes=datamodule.num_classes,
+            drop_rate=0.2,
+            pretrained=pretrained,
+        )
+    elif datamodule.task == "segmentation":
+        net = smp.Unet(
+            encoder_name=model_name,
             in_channels=3,
             classes=datamodule.num_classes,
         )
@@ -142,10 +106,9 @@ def train(
     )
     if os.environ.get("NEPTUNE_API_TOKEN"):
         trainer_logger = NeptuneLogger(
-            project="conformal-in-the-loop/med-citl",
+            project="conformal-in-the-loop/citl",
             name=f"{model_name}-{dataset}",
             api_key=os.environ["NEPTUNE_API_TOKEN"],
-            mode="sync",
         )
         trainer_logger.experiment["parameters/architecture"] = model_name
         trainer_logger.experiment["parameters/dataset"] = dataset
@@ -172,8 +135,8 @@ def train(
         }
     elif datamodule.task == "segmentation":
         model_callback_config = {
-            "filename": "{epoch}-{val_dice:.3f}",
-            "monitor": "val_dice",
+            "filename": "{epoch}-{val_jaccard:.3f}",
+            "monitor": "val_jaccard",
             "mode": "max",
             "save_top_k": 1,
             "save_last": True,
@@ -187,10 +150,11 @@ def train(
         )
 
     callbacks = [
+        LearningRateMonitor(logging_interval="step"),
         ModelCheckpoint(**model_callback_config),
         EarlyStopping(
             monitor=(
-                "val_accuracy" if datamodule.task == "classification" else "val_dice"
+                "val_accuracy" if datamodule.task == "classification" else "val_jaccard"
             ),
             mode="max",
             patience=20,
@@ -203,7 +167,6 @@ def train(
         max_epochs=sys.maxsize,
         deterministic=True,
         callbacks=callbacks,
-        accumulate_grad_batches=4,
         log_every_n_steps=10,
     )
 

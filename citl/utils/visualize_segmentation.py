@@ -5,7 +5,6 @@ from matplotlib import pyplot as plt
 def visualize_segmentation(
     image, num_classes, mask, prediction=None, prediction_set_size=None
 ):
-
     num_subplots = 0
     if prediction is not None:
         num_subplots += 1
