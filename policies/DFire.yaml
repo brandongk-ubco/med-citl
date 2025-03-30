@@ -13,9 +13,11 @@ transform:
         - 68
     - __class_fullname__: CoarseDropout
       p: 1.00
-      max_holes: 1
-      max_height: 68
-      max_width: 68
+      num_holes_range: [1, 1]
+      hole_height_range: [0, 68]
+      hole_width_range: [0, 68]
+      fill: 0
+      fill_mask: null
     - __class_fullname__: ToTensorV2
       p: 1.00
   bbox_params:

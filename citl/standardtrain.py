@@ -26,8 +26,10 @@ def standardtrain(
     augmentation_policy_path: str = "./policies/noop.yaml",
     lr_method: str = "plateau",
     lr: float = 5e-4,
+    pretrained: bool = True,
     noise_level: float = 0.0,
     loss_function: str = "cross_entropy",
+    margin_weighting: bool = False
 ):
     L.seed_everything(42, workers=True)
     torch.set_float32_matmul_precision("high")
@@ -37,7 +39,7 @@ def standardtrain(
 
     if datamodule.task == "classification":
         net = create_model(
-            model_name, num_classes=datamodule.num_classes, drop_rate=0.2
+            model_name, num_classes=datamodule.num_classes, drop_rate=0.2, pretrained=pretrained,
         )
     elif datamodule.task == "segmentation":
         net = smp.Unet(
@@ -59,6 +61,7 @@ def standardtrain(
         lr_method=lr_method,
         lr=lr,
         loss_function=loss_function,
+        margin_weighting=margin_weighting,
     )
 
     policy, _ = os.path.splitext(os.path.basename(augmentation_policy_path))
@@ -76,7 +79,7 @@ def standardtrain(
     )
     if os.environ.get("NEPTUNE_API_TOKEN"):
         trainer_logger = NeptuneLogger(
-            project="conformal-in-the-loop/med-citl",
+            project="conformal-in-the-loop/citl",
             name=f"{model_name}-{dataset}",
             api_key=os.environ["NEPTUNE_API_TOKEN"],
         )
@@ -85,6 +88,7 @@ def standardtrain(
         trainer_logger.experiment["parameters/augmentation_policy"] = policy
         trainer_logger.experiment["parameters/loss_function"] = loss_function
         trainer_logger.experiment["parameters/noise_level"] = noise_level
+        trainer_logger.experiment["parameters/margin_weighting"] = margin_weighting
         trainer_logger.experiment["sys/tags"].add(model_name)
         trainer_logger.experiment["sys/tags"].add(dataset)
         trainer_logger.experiment["sys/tags"].add("Standard")

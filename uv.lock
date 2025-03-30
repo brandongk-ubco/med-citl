@@ -112,7 +112,7 @@ wheels = [
 
 [[package]]
 name = "albumentations"
-version = "2.0.4"
+version = "2.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "albucore" },
@@ -122,9 +122,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a1/be/559123832a0b2887da47f0debb15832567ef9681db9670269df32d801ad8/albumentations-2.0.4.tar.gz", hash = "sha256:4f0cd22576fba8030fc99f1ccacee1452a1880ac2a9ce0882f0d93e5477d5c70", size = 279983 }
+sdist = { url = "https://files.pythonhosted.org/packages/8d/ad/89050e1222a57e7b834368f83bb2644b428a18c1e078a5c7762abb6beea0/albumentations-2.0.5.tar.gz", hash = "sha256:e19e1c0f14c903c3c230f3d83f14814b84f1180393189bf96779f653031f3278", size = 281195 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e6/19/38d0867de80401416b5dac081d30912c374e956264ec4da22d2b423bf4b9/albumentations-2.0.4-py3-none-any.whl", hash = "sha256:1d60b62527d34bb8791fad90f6faeeb065ecc5cb4577ff85614f022d56183010", size = 289594 },
+    { url = "https://files.pythonhosted.org/packages/97/d3/cf3aab593209d1be5e4bca54aeea297225708bd25f06426d6b8ec3630a76/albumentations-2.0.5-py3-none-any.whl", hash = "sha256:1fc253942d34dd7c07652bf6511049c8bb7d522baec7f1fe355df16293c3c7b6", size = 290588 },
 ]
 
 [[package]]
@@ -480,7 +480,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "albumentations", specifier = ">=2.0.4" },
+    { name = "albumentations", specifier = ">=2.0.5" },
     { name = "blinker" },
     { name = "einops", specifier = ">=0.8.0,<0.9" },
     { name = "einops-exts", specifier = ">=0.0.4,<0.0.5" },

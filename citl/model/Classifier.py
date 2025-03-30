@@ -13,6 +13,7 @@ class Classifier(L.LightningModule):
         lr=1e-3,
         lr_method="plateau",
         loss_function="cross_entropy",
+        margin_weighting=False,
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["model"])
@@ -31,6 +32,7 @@ class Classifier(L.LightningModule):
 
         self.lr = lr
         self.lr_method = lr_method
+        self.margin_weighting = margin_weighting
 
         if loss_function == "cross_entropy":
             self.loss = torch.nn.CrossEntropyLoss(reduction="none")
@@ -62,7 +64,14 @@ class Classifier(L.LightningModule):
 
         y_hat = self(x)
 
-        loss = self.loss(y_hat, y).mean()
+        loss = self.loss(y_hat, y)
+
+        if self.margin_weighting:
+            softmax = torch.softmax(y_hat, dim=1)
+            weights = torch.gather(softmax, dim=1, index=y.unsqueeze(1)).squeeze(1)
+            loss = loss * (1 - weights)
+
+        loss = loss.mean()
 
         accs = self.accuracy(y_hat, y)
         self.log("accuracy", torch.mean(accs))
