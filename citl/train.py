@@ -19,6 +19,8 @@ from pytorch_lightning.callbacks import (
 )
 from pytorch_lightning.loggers import NeptuneLogger, TensorBoardLogger
 from timm import create_model, layers
+from transformers import AutoModel 
+
 
 from citl import cli
 
@@ -53,31 +55,49 @@ def train(
     assert os.path.exists(augmentation_policy_path)
     datamodule = Dataset.get(dataset)(augmentation_policy_path)
 
-    timm_kwargs = {
-            'img_size': 224, 
-            'patch_size': 14, 
-            'depth': 24,
-            'num_heads': 24,
-            'init_values': 1e-5, 
-            'embed_dim': 1536,
-            'mlp_ratio': 2.66667*2,
-            'no_embed_class': True,
-            'mlp_layer': layers.SwiGLUPacked, 
-            'act_layer': torch.nn.SiLU, 
-            'reg_tokens': 8, 
-            'dynamic_img_size': True
-        }
+    titan = AutoModel.from_pretrained('MahmoodLab/TITAN', trust_remote_code=True)
+    conch, eval_transform = titan.return_conch()
+    children = list(conch.children())
+    # encoder = torch.nn.Sequential(*children[:-2])
 
-    net = create_model(
-        model_name,
-        drop_rate=0.2,
-        pretrained=pretrained,
-        **timm_kwargs
-    )
+    # tile_encoder = create_model("hf_hub:prov-gigapath/prov-gigapath", pretrained=True)
 
-    img = torch.rand(1, 3, 224, 224)
+    # timm_kwargs = {
+    #         'img_size': 224, 
+    #         'patch_size': 14, 
+    #         'depth': 24,
+    #         'num_heads': 24,
+    #         'init_values': 1e-5, 
+    #         'embed_dim': 1536,
+    #         'mlp_ratio': 2.66667*2,
+    #         'no_embed_class': True,
+    #         'mlp_layer': layers.SwiGLUPacked, 
+    #         'act_layer': torch.nn.SiLU, 
+    #         'reg_tokens': 8, 
+    #         'dynamic_img_size': True
+    #     }
+
+    # net = create_model(
+    #     model_name,
+    #     drop_rate=0,
+    #     pretrained=pretrained,
+    #     **timm_kwargs
+    # )
+
+    # img224 = torch.rand(1, 3, 224, 224)
+    # img512 = torch.rand(1, 3, 512, 512)
+    # img1024 = torch.rand(1, 3, 1024, 1024)
+
+    # net: 224x224 (UNI2-h)
+    # conch: ANYxANY (TITAN)
+    # tile_encoder: 224x224 (GigaPath)
+
+    import pdb
+    pdb.set_trace()
+
+
     with torch.inference_mode():
-        result = net(img)
+        result = conch(img224)
     import pdb
     pdb.set_trace()
 
