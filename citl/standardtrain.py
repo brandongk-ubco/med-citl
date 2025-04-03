@@ -29,17 +29,20 @@ def standardtrain(
     pretrained: bool = True,
     noise_level: float = 0.0,
     loss_function: str = "cross_entropy",
-    margin_weighting: bool = False
+    margin_weighting: bool = False,
 ):
     L.seed_everything(42, workers=True)
     torch.set_float32_matmul_precision("high")
 
     assert os.path.exists(augmentation_policy_path)
-    datamodule = Dataset.get(dataset)(augmentation_policy_path, noise_level=noise_level)
+    datamodule = Dataset.get(dataset)(augmentation_policy_path)
 
     if datamodule.task == "classification":
         net = create_model(
-            model_name, num_classes=datamodule.num_classes, drop_rate=0.2, pretrained=pretrained,
+            model_name,
+            num_classes=datamodule.num_classes,
+            drop_rate=0.2,
+            pretrained=pretrained,
         )
     elif datamodule.task == "segmentation":
         net = smp.Unet(
@@ -121,7 +124,7 @@ def standardtrain(
 
     trainer = L.Trainer(
         logger=trainer_logger,
-        num_sanity_val_steps=0,
+        num_sanity_val_steps=10,
         max_epochs=sys.maxsize,
         deterministic=True,
         callbacks=callbacks,

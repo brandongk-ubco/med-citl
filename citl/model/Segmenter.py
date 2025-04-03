@@ -1,14 +1,19 @@
 import pytorch_lightning as L
 import torch
-from torchmetrics.classification import F1Score
+from torchmetrics.classification import JaccardIndex
 
-# from ..losses.FocalLoss import FocalLoss
-# from ..losses.TverskyLoss import TverskyLoss
+from ..losses.FocalLoss import FocalLoss
 
 
 class Segmenter(L.LightningModule):
     def __init__(
-        self, model, num_classes, lr=1e-3, lr_method="plateau", loss_function=None
+        self,
+        model,
+        num_classes,
+        lr=1e-3,
+        lr_method="plateau",
+        loss_function="cross_entropy",
+        margin_weighting=False,
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["model"])
@@ -16,7 +21,8 @@ class Segmenter(L.LightningModule):
         self.model = model
 
         self.num_classes = num_classes
-        self.dice = F1Score(
+
+        self.jaccard = JaccardIndex(
             task="multiclass",
             num_classes=num_classes,
             average="none",
@@ -24,7 +30,7 @@ class Segmenter(L.LightningModule):
             zero_division=1.0,
         )
 
-        self.val_dice = F1Score(
+        self.val_jaccard = JaccardIndex(
             task="multiclass",
             num_classes=num_classes,
             average="none",
@@ -32,7 +38,7 @@ class Segmenter(L.LightningModule):
             zero_division=1.0,
         )
 
-        self.test_dice = F1Score(
+        self.test_jaccard = JaccardIndex(
             task="multiclass",
             num_classes=num_classes,
             average="none",
@@ -42,29 +48,27 @@ class Segmenter(L.LightningModule):
 
         self.lr = lr
         self.lr_method = lr_method
-        # self.entropy_loss = FocalLoss(
-        #     "multiclass", reduction="none", from_logits=True, ignore_index=0
-        # )
-        self.entropy_loss = torch.nn.CrossEntropyLoss(reduction="none", ignore_index=0)
-        # self.overlap_loss = TverskyLoss(from_logits=True)
+        self.margin_weighting = margin_weighting
+
+        if loss_function == "cross_entropy":
+            self.loss_function = torch.nn.CrossEntropyLoss(
+                reduction="none", ignore_index=0
+            )
+        elif loss_function == "focal":
+            self.loss_function = FocalLoss(
+                "multiclass", reduction="none", from_logits=True, ignore_index=0
+            )
+        else:
+            raise ValueError("Loss function not implemented")
 
     def loss(self, y_hat, y):
-        # num_classes = y_hat.shape[1]
-        # y_one_hot = F.one_hot(y.long(), num_classes=num_classes)
-        # y_one_hot = y_one_hot.permute(0, 3, 1, 2)
-        loss = self.entropy_loss(y_hat, y.long())[y != 0].mean()
-        # loss += self.overlap_loss(
-        #     y_hat[:, 1:, :, :].reshape(-1), y_one_hot[:, 1:, :, :].reshape(-1)
-        # )
-        # classwise = torch.zeros(
-        #     self.num_classes,
-        #     dtype=loss.dtype,
-        #     device=loss.device,
-        #     requires_grad=loss.requires_grad,
-        # )
-        # classwise = torch.scatter_add(classwise, 0, ground_truths, loss)
-        # classwise /= y.numel()
-        return loss
+        y_long = y.long()
+        loss = self.loss_function(y_hat, y_long)
+        if self.margin_weighting:
+            softmax = torch.softmax(y_hat, dim=1)
+            weights = torch.gather(softmax, dim=1, index=y_long.unsqueeze(1)).squeeze(1)
+            loss = loss * (1 - weights)
+        return loss.mean()
 
     def forward(self, x):
         if x.dim() == 2:
@@ -82,7 +86,7 @@ class Segmenter(L.LightningModule):
         return y_hat
 
     def on_train_epoch_start(self) -> None:
-        self.dice.reset()
+        self.jaccard.reset()
 
     def training_step(self, batch, batch_idx):
         x, y, _ = batch
@@ -107,13 +111,13 @@ class Segmenter(L.LightningModule):
         y_hat = self(x)
         loss = self.loss(y_hat, y)
 
-        dice = self.dice(y_hat.argmax(dim=1).long(), y.long())
-        self.log("dice", torch.mean(dice[1:]))
+        jaccard = self.jaccard(y_hat.argmax(dim=1).long(), y.long())
+        self.log("jaccard", torch.mean(jaccard[1:]))
         self.log_dict(
             dict(
                 zip(
-                    [f"dice_{c}" for c in self.trainer.datamodule.classes[1:]],
-                    dice[1:],
+                    [f"jaccard_{c}" for c in self.trainer.datamodule.classes[1:]],
+                    jaccard[1:],
                 )
             ),
             on_step=True,
@@ -124,7 +128,7 @@ class Segmenter(L.LightningModule):
         return loss
 
     def on_validation_epoch_start(self) -> None:
-        self.val_dice.reset()
+        self.val_jaccard.reset()
 
     def validation_step(self, batch, batch_idx):
         x, y, _ = batch
@@ -132,7 +136,7 @@ class Segmenter(L.LightningModule):
 
         val_loss = self.loss(y_hat, y)
 
-        self.val_dice.update(y_hat.argmax(dim=1).long(), y.long())
+        self.val_jaccard.update(y_hat.argmax(dim=1).long(), y.long())
         self.log(
             "val_loss",
             val_loss,
@@ -141,10 +145,10 @@ class Segmenter(L.LightningModule):
         )
 
     def on_validation_epoch_end(self):
-        dice = self.val_dice.compute()
+        jaccard = self.val_jaccard.compute()
         self.log(
-            "val_dice",
-            torch.mean(dice[1:]),
+            "val_jaccard",
+            torch.mean(jaccard[1:]),
             prog_bar=True,
             on_step=False,
             on_epoch=True,
@@ -152,8 +156,8 @@ class Segmenter(L.LightningModule):
         self.log_dict(
             dict(
                 zip(
-                    [f"val_dice_{c}" for c in self.trainer.datamodule.classes[1:]],
-                    dice[1:],
+                    [f"val_jaccard_{c}" for c in self.trainer.datamodule.classes[1:]],
+                    jaccard[1:],
                 )
             ),
             on_step=False,
@@ -161,7 +165,7 @@ class Segmenter(L.LightningModule):
         )
 
     def on_test_epoch_start(self) -> None:
-        self.test_dice.reset()
+        self.test_jaccard.reset()
 
     def test_step(self, batch, batch_idx):
         x, y, _ = batch
@@ -169,7 +173,7 @@ class Segmenter(L.LightningModule):
 
         test_loss = self.loss(y_hat, y)
 
-        self.test_dice.update(y_hat.argmax(dim=1).long(), y.long())
+        self.test_jaccard.update(y_hat.argmax(dim=1).long(), y.long())
 
         self.log(
             "test_loss",
@@ -179,13 +183,13 @@ class Segmenter(L.LightningModule):
         )
 
     def on_test_epoch_end(self):
-        dice = self.test_dice.compute()
-        self.log("test_dice", torch.mean(dice[1:]))
+        jaccard = self.test_jaccard.compute()
+        self.log("test_jaccard", torch.mean(jaccard[1:]))
         self.log_dict(
             dict(
                 zip(
-                    [f"test_dice_{c}" for c in self.trainer.datamodule.classes[1:]],
-                    dice[1:],
+                    [f"test_jaccard_{c}" for c in self.trainer.datamodule.classes[1:]],
+                    jaccard[1:],
                 )
             )
         )

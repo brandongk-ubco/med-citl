@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from matplotlib import pyplot as plt
 from pytorch_lightning.loggers import NeptuneLogger, TensorBoardLogger
-from torchmetrics.classification import F1Score
+from torchmetrics.classification import JaccardIndex
 
 from ..ConformalClassifier import ConformalClassifier
 from ..utils.visualize_segmentation import visualize_segmentation
@@ -21,7 +21,6 @@ class CITLSegmenter(L.LightningModule):
         lr=1e-3,
         lr_method="plateau",
         method="score",
-        loss_function=None,
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["model"])
@@ -30,7 +29,8 @@ class CITLSegmenter(L.LightningModule):
         self.conformal_classifier = ConformalClassifier(method=method, ignore_index=0)
 
         self.num_classes = num_classes
-        self.dice = F1Score(
+
+        self.jaccard = JaccardIndex(
             task="multiclass",
             num_classes=num_classes,
             average="none",
@@ -38,7 +38,7 @@ class CITLSegmenter(L.LightningModule):
             zero_division=1.0,
         )
 
-        self.val_dice = F1Score(
+        self.val_jaccard = JaccardIndex(
             task="multiclass",
             num_classes=num_classes,
             average="none",
@@ -46,7 +46,7 @@ class CITLSegmenter(L.LightningModule):
             zero_division=1.0,
         )
 
-        self.test_dice = F1Score(
+        self.test_jaccard = JaccardIndex(
             task="multiclass",
             num_classes=num_classes,
             average="none",
@@ -78,7 +78,7 @@ class CITLSegmenter(L.LightningModule):
         return y_hat
 
     def on_train_epoch_start(self) -> None:
-        self.dice.reset()
+        self.jaccard.reset()
         self.class_weights = dict(
             zip(range(self.num_classes), [0.0] * self.num_classes)
         )
@@ -138,13 +138,13 @@ class CITLSegmenter(L.LightningModule):
         else:
             loss = F.cross_entropy(y_hat, y.long(), reduction="none")[y != 0].mean()
 
-        dice = self.dice(y_hat.argmax(dim=1).long(), y.long())
-        self.log("dice", torch.mean(dice[1:]))
+        jaccard = self.jaccard(y_hat.argmax(dim=1).long(), y.long())
+        self.log("jaccard", torch.mean(jaccard[1:]))
         self.log_dict(
             dict(
                 zip(
-                    [f"dice_{c}" for c in self.trainer.datamodule.classes[1:]],
-                    dice[1:],
+                    [f"jaccard_{c}" for c in self.trainer.datamodule.classes[1:]],
+                    jaccard[1:],
                 )
             ),
             on_step=True,
@@ -220,7 +220,7 @@ class CITLSegmenter(L.LightningModule):
         plt.close()
 
     def on_validation_epoch_start(self) -> None:
-        self.val_dice.reset()
+        self.val_jaccard.reset()
         self.conformal_classifier.reset()
         self.val_batch_idx_fit_uncertainty = (
             len(self.trainer.datamodule.val_dataloader()) // 10
@@ -232,7 +232,7 @@ class CITLSegmenter(L.LightningModule):
         y_hat = self(x)
 
         val_loss = F.cross_entropy(y_hat, y.long(), reduction="none")[y != 0].mean()
-        self.val_dice.update(y_hat.argmax(dim=1).long(), y.long())
+        self.val_jaccard.update(y_hat.argmax(dim=1).long(), y.long())
 
         if batch_idx < self.val_batch_idx_fit_uncertainty:
             self.conformal_classifier.append(y_hat, y, percentage=0.1)
@@ -252,10 +252,10 @@ class CITLSegmenter(L.LightningModule):
         self.log("val_loss", val_loss, on_step=False, on_epoch=True)
 
     def on_validation_epoch_end(self):
-        dice = self.val_dice.compute()
+        jaccard = self.val_jaccard.compute()
         self.log(
-            "val_dice",
-            torch.mean(dice[1:]),
+            "val_jaccard",
+            torch.mean(jaccard[1:]),
             on_epoch=True,
             on_step=False,
             prog_bar=True,
@@ -263,8 +263,8 @@ class CITLSegmenter(L.LightningModule):
         self.log_dict(
             dict(
                 zip(
-                    [f"val_dice_{c}" for c in self.trainer.datamodule.classes[1:]],
-                    dice[1:],
+                    [f"val_jaccard_{c}" for c in self.trainer.datamodule.classes[1:]],
+                    jaccard[1:],
                 )
             ),
             on_epoch=True,
@@ -279,7 +279,7 @@ class CITLSegmenter(L.LightningModule):
         self.log_dict(quantiles, prog_bar=False, on_epoch=True, on_step=False)
 
     def on_test_epoch_start(self) -> None:
-        self.test_dice.reset()
+        self.test_jaccard.reset()
 
     def test_step(self, batch, batch_idx):
         x, y, _ = batch
@@ -314,23 +314,23 @@ class CITLSegmenter(L.LightningModule):
                 self.logger.experiment["training/test_image"].append(fig)
             plt.close()
 
-        self.test_dice.update(y_hat.argmax(dim=1).long(), y.long())
+        self.test_jaccard.update(y_hat.argmax(dim=1).long(), y.long())
 
         self.log("test_loss", test_loss, on_epoch=True, on_step=False)
 
     def on_test_epoch_end(self):
-        dice = self.test_dice.compute()
+        jaccard = self.test_jaccard.compute()
         self.log(
-            "test_dice",
-            torch.mean(dice[1:]),
+            "test_jaccard",
+            torch.mean(jaccard[1:]),
             on_epoch=True,
             on_step=False,
         )
         self.log_dict(
             dict(
                 zip(
-                    [f"test_dice_{c}" for c in self.trainer.datamodule.classes[1:]],
-                    dice[1:],
+                    [f"test_jaccard_{c}" for c in self.trainer.datamodule.classes[1:]],
+                    jaccard[1:],
                 )
             ),
             on_epoch=True,
@@ -359,7 +359,7 @@ class CITLSegmenter(L.LightningModule):
                 {
                     "scheduler": scheduler,
                     "interval": interval,
-                    "monitor": "val_dice",
+                    "monitor": "val_jaccard",
                 }
             ]
 
