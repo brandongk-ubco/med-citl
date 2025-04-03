@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
-# export $(cat .env | xargs)
+export $(cat .env | xargs)
 
-nohup ./train.sh > output.log 2>&1 &
+# nohup ./cifar.sh > cifar.log 2>&1 &
+nohup ./puma.sh > puma.log 2>&1 &

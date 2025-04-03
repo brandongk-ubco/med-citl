@@ -5,9 +5,6 @@ set -eux
 rm -rf lightning_logs
 rm .*.ckpt || true
 
-# export $(cat .env | xargs)
-
-
 python -m citl standardtrain PumaTissue mit_b4  \
     "--augmentation-policy-path=./policies/pumatissue.yaml" \
     "--loss-function=cross_entropy" \

@@ -1,8 +1,11 @@
 import pytorch_lightning as L
 import torch
 from torchmetrics.classification import JaccardIndex
+from pytorch_lightning.loggers import NeptuneLogger, TensorBoardLogger
 
 from ..losses.FocalLoss import FocalLoss
+from ..utils import visualize_segmentation
+from matplotlib import pyplot as plt
 
 
 class Segmenter(L.LightningModule):
@@ -91,22 +94,22 @@ class Segmenter(L.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y, _ = batch
 
-        # if self.current_epoch == 0:
-        #     img, target = x[1, :, :, :], y[1]
-        #     if img.ndim > 2:
-        #         img = img.moveaxis(0, -1)
-        #     img = img - img.min()
-        #     img = img / img.max()
-        #     fig = visualize_segmentation(
-        #         img.detach().cpu(), self.num_classes, mask=target[1:].detach().cpu()
-        #     )
-        #     if type(self.trainer.logger) is TensorBoardLogger:
-        #         self.logger.experiment.add_figure(
-        #             "example_image", fig, self.global_step
-        #         )
-        #     elif type(self.trainer.logger) is NeptuneLogger:
-        #         self.logger.experiment["training/example_image"].append(fig)
-        #     plt.close()
+        if self.current_epoch == 0:
+            img, target = x[1, :, :, :], y[1]
+            if img.ndim > 2:
+                img = img.moveaxis(0, -1)
+            img = img - img.min()
+            img = img / img.max()
+            fig = visualize_segmentation(
+                img.detach().cpu(), self.num_classes, mask=target[1:].detach().cpu()
+            )
+            if type(self.trainer.logger) is TensorBoardLogger:
+                self.logger.experiment.add_figure(
+                    "example_image", fig, self.global_step
+                )
+            elif type(self.trainer.logger) is NeptuneLogger:
+                self.logger.experiment["training/example_image"].append(fig)
+            plt.close()
 
         y_hat = self(x)
         loss = self.loss(y_hat, y)

@@ -5,8 +5,6 @@ set -eux
 rm -rf lightning_logs
 rm .*.ckpt || true
 
-export $(cat .env | xargs)
-
 # Train the three baselines
 levels=(0.0 0.1 0.2 0.3 0.4 0.5)
 for level in "${levels[@]}"
