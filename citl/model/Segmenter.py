@@ -3,7 +3,6 @@ import torch
 from torchmetrics.classification import JaccardIndex
 from pytorch_lightning.loggers import NeptuneLogger, TensorBoardLogger
 
-from ..losses.FocalLoss import FocalLoss
 from ..utils import visualize_segmentation
 from matplotlib import pyplot as plt
 
@@ -17,6 +16,7 @@ class Segmenter(L.LightningModule):
         lr_method="plateau",
         loss_function="cross_entropy",
         margin_weighting=False,
+        ignore_index=-100
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["model"])
@@ -24,12 +24,13 @@ class Segmenter(L.LightningModule):
         self.model = model
 
         self.num_classes = num_classes
+        self.ignore_index = ignore_index
 
         self.jaccard = JaccardIndex(
             task="multiclass",
             num_classes=num_classes,
             average="none",
-            ignore_index=0,
+            ignore_index=self.ignore_index,
             zero_division=1.0,
         )
 
@@ -37,7 +38,7 @@ class Segmenter(L.LightningModule):
             task="multiclass",
             num_classes=num_classes,
             average="none",
-            ignore_index=0,
+            ignore_index=self.ignore_index,
             zero_division=1.0,
         )
 
@@ -45,7 +46,7 @@ class Segmenter(L.LightningModule):
             task="multiclass",
             num_classes=num_classes,
             average="none",
-            ignore_index=0,
+            ignore_index=self.ignore_index,
             zero_division=1.0,
         )
 
@@ -55,11 +56,7 @@ class Segmenter(L.LightningModule):
 
         if loss_function == "cross_entropy":
             self.loss_function = torch.nn.CrossEntropyLoss(
-                reduction="none", ignore_index=0
-            )
-        elif loss_function == "focal":
-            self.loss_function = FocalLoss(
-                "multiclass", reduction="none", from_logits=True, ignore_index=0
+                reduction="none", ignore_index=self.ignore_index
             )
         else:
             raise ValueError("Loss function not implemented")

@@ -20,7 +20,7 @@ transform:
       p: 0.25
       transforms:
         - __class_fullname__: ImageCompression
-          quality_lower: 90
+          quality_range: [90, 100]
         - __class_fullname__: Blur
         - __class_fullname__: GaussNoise
     - __class_fullname__: RandomBrightnessContrast

@@ -119,10 +119,12 @@ class CityscapesDataModule(L.LightningDataModule):
 
     task = "segmentation"
 
+    ignore_index = 0
+
     def __init__(
         self,
         augmentation_policy_path,
-        batch_size: int = 6,
+        batch_size: int = 4,
         train_mode: str = "fine",
         data_dir: str = PATH_DATASETS,
     ):

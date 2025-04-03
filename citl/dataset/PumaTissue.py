@@ -86,7 +86,6 @@ class PumaTissueDataset(Dataset):
         Convert a GeoJSON file to a binary mask.
         """
         gdf = gpd.read_file(geojson_path)
-        mask = np.zeros((height, width), dtype=np.uint8)
 
         tissue_map = {
             "tissue_white_background": 0,
@@ -131,6 +130,8 @@ class PumaTissueDataModule(L.LightningDataModule):
 
     task = "segmentation"
 
+    ignore_index = 0
+
     def __init__(
         self,
         augmentation_policy_path,
@@ -145,6 +146,7 @@ class PumaTissueDataModule(L.LightningDataModule):
         self.data_dir = data_dir
         self.num_classes = len(self.classes)
         self.batch_size = batch_size
+        self.noise_level = noise_level
 
         self.image_size = 1024
 

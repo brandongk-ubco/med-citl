@@ -21,6 +21,7 @@ class CITLSegmenter(L.LightningModule):
         lr=1e-3,
         lr_method="plateau",
         method="score",
+        ignore_index=-100
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["model"])
@@ -29,12 +30,13 @@ class CITLSegmenter(L.LightningModule):
         self.conformal_classifier = ConformalClassifier(method=method, ignore_index=0)
 
         self.num_classes = num_classes
+        self.ignore_index = ignore_index
 
         self.jaccard = JaccardIndex(
             task="multiclass",
             num_classes=num_classes,
             average="none",
-            ignore_index=0,
+            ignore_index=ignore_index,
             zero_division=1.0,
         )
 
@@ -42,7 +44,7 @@ class CITLSegmenter(L.LightningModule):
             task="multiclass",
             num_classes=num_classes,
             average="none",
-            ignore_index=0,
+            ignore_index=ignore_index,
             zero_division=1.0,
         )
 
@@ -50,7 +52,7 @@ class CITLSegmenter(L.LightningModule):
             task="multiclass",
             num_classes=num_classes,
             average="none",
-            ignore_index=0,
+            ignore_index=ignore_index,
             zero_division=1.0,
         )
 
@@ -122,12 +124,12 @@ class CITLSegmenter(L.LightningModule):
 
         if self.selectively_backpropagate:
             prediction_set_size = uncertainty["prediction_set_size"]
-            loss = F.cross_entropy(y_hat, y.long(), reduction="none")[y != 0].flatten()
+            loss = F.cross_entropy(y_hat, y.long(), reduction="none")[y != self.ignore_index].flatten()
             loss_weights = prediction_set_size
             loss = loss * loss_weights
             loss = loss.mean()
 
-            y_flt = y[y != 0].long()
+            y_flt = y[y != self.ignore_index].long()
             y_flt = y_flt.flatten()
             for clazz in range(1, self.num_classes):
                 class_idxs = y_flt == clazz
@@ -136,7 +138,7 @@ class CITLSegmenter(L.LightningModule):
                 self.class_counts[clazz] += count
                 self.class_weights[clazz] += weights
         else:
-            loss = F.cross_entropy(y_hat, y.long(), reduction="none")[y != 0].mean()
+            loss = F.cross_entropy(y_hat, y.long(), reduction="none")[y != self.ignore_index].mean()
 
         jaccard = self.jaccard(y_hat.argmax(dim=1).long(), y.long())
         self.log("jaccard", torch.mean(jaccard[1:]))
@@ -231,7 +233,7 @@ class CITLSegmenter(L.LightningModule):
         x, y, _ = batch
         y_hat = self(x)
 
-        val_loss = F.cross_entropy(y_hat, y.long(), reduction="none")[y != 0].mean()
+        val_loss = F.cross_entropy(y_hat, y.long(), reduction="none")[y != self.ignore_index].mean()
         self.val_jaccard.update(y_hat.argmax(dim=1).long(), y.long())
 
         if batch_idx < self.val_batch_idx_fit_uncertainty:
@@ -285,7 +287,7 @@ class CITLSegmenter(L.LightningModule):
         x, y, _ = batch
         y_hat = self(x)
 
-        test_loss = F.cross_entropy(y_hat, y.long(), reduction="none")[y != 0].mean()
+        test_loss = F.cross_entropy(y_hat, y.long(), reduction="none")[y != self.ignore_index].mean()
 
         self.conformal_classifier.reset()
         self.conformal_classifier.append(y_hat, y)

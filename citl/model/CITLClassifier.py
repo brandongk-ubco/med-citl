@@ -21,6 +21,7 @@ class CITLClassifier(L.LightningModule):
         lr_method="plateau",
         method="score",
         loss_function="cross_entropy",
+        ignore_index=-100
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["model"])
@@ -29,6 +30,8 @@ class CITLClassifier(L.LightningModule):
         self.conformal_classifier = ConformalClassifier(method=method)
 
         self.num_classes = num_classes
+
+        self.ignore_index = ignore_index
 
         self.accuracy = Accuracy(
             task="multiclass", num_classes=num_classes, average="none"

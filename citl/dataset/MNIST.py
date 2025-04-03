@@ -66,6 +66,8 @@ class MNISTDataModule(L.LightningDataModule):
 
     task = "classification"
 
+    ignore_index = -100
+
     def __init__(
         self,
         augmentation_policy_path,

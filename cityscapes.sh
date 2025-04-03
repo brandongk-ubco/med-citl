@@ -5,22 +5,22 @@ set -eux
 rm -rf lightning_logs
 rm .*.ckpt || true
 
-python -m citl standardtrain PumaTissue mit_b4  \
-    "--augmentation-policy-path=./policies/pumatissue.yaml" \
+python -m citl standardtrain CityscapesFine efficientnet-b0  \
+    "--augmentation-policy-path=./policies/cityscapes.yaml" \
     "--loss-function=cross_entropy" \
     "--margin-weighting" \
     "--lr-method=plateau" \
     "--pretrained"
 
-python -m citl standardtrain PumaTissue mit_b4 \
-    "--augmentation-policy-path=./policies/pumatissue.yaml" \
+python -m citl standardtrain CityscapesFine efficientnet-b0 \
+    "--augmentation-policy-path=./policies/pumatcityscapesissue.yaml" \
     "--loss-function=cross_entropy" \
     "--no-margin-weighting" \
     "--lr-method=plateau" \
     "--pretrained"
 
-python -m citl standardtrain PumaTissue mit_b4 \
-    "--augmentation-policy-path=./policies/pumatissue.yaml" \
+python -m citl standardtrain CityscapesFine efficientnet-b0 \
+    "--augmentation-policy-path=./policies/cityscapes.yaml" \
     "--loss-function=focal" \
     "--no-margin-weighting" \
     "--lr-method=plateau" \
@@ -34,8 +34,8 @@ do
     for level in "${levels[@]}"
     do
 
-        python -m citl train PumaTissue mit_b4 \
-            "--augmentation-policy-path=./policies/pumatissue.yaml" \
+        python -m citl train PumaTissuCityscapesFinee efficientnet-b0 \
+            "--augmentation-policy-path=./policies/cityscapes.yaml" \
             "--alpha=${alpha}" \
             "--loss-function=cross_entropy" \
             "--lr-method=plateau" \

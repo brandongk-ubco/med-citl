@@ -14,11 +14,13 @@ class Classifier(L.LightningModule):
         lr_method="plateau",
         loss_function="cross_entropy",
         margin_weighting=False,
+        ignore_index=-100
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["model"])
         self.model = model
         self.num_classes = num_classes
+        self.ignore_index = ignore_index
 
         self.accuracy = Accuracy(
             task="multiclass", num_classes=num_classes, average="none"
