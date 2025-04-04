@@ -13,7 +13,7 @@ python -m citl standardtrain CityscapesFine efficientnet-b0  \
     "--pretrained"
 
 python -m citl standardtrain CityscapesFine efficientnet-b0 \
-    "--augmentation-policy-path=./policies/pumatcityscapesissue.yaml" \
+    "--augmentation-policy-path=./policies/cityscapes.yaml" \
     "--loss-function=cross_entropy" \
     "--no-margin-weighting" \
     "--lr-method=plateau" \
