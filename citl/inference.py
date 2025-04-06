@@ -17,7 +17,7 @@ def softmax(x):
 
 
 @cli.command()
-def inference(run_id: str, dataset: Dataset):
+def inference(run_id: str, dataset: Dataset, max_examples: int = 100):
     with neptune.init_run(with_id=run_id, mode="read-only") as run:
         artifact_path = "model.onnx"
 
@@ -50,14 +50,19 @@ def inference(run_id: str, dataset: Dataset):
 
     dataloader = datamodule.test_dataloader()
 
+    num_examples = min(len(dataloader), max_examples)
+
+
     predictions = np.empty(
-        (len(dataloader), datamodule.num_classes, 1024, 2048), dtype=np.float16
+        (num_examples, datamodule.num_classes, 1024, 2048), dtype=np.float16
     )
-    ground_truths = np.empty((len(dataloader), 1024, 2048), dtype=np.uint8)
+    ground_truths = np.empty((num_examples, 1024, 2048), dtype=np.uint8)
+
+    images = np.empty((num_examples, 3, 1024, 2048), dtype=np.uint8)
 
     i = 0
 
-    for batch in tqdm(datamodule.test_dataloader(), desc="Inferencing"):
+    for batch in tqdm(datamodule.test_dataloader(), desc="Inferencing", total=num_examples):
         inputs, targets, _index = batch
 
         batch_size = inputs.shape[0]
@@ -95,13 +100,20 @@ def inference(run_id: str, dataset: Dataset):
                 torch.Tensor(prediction).unsqueeze(0), torch.Tensor(target).unsqueeze(0)
             )
             predictions[i, :, :, :] = stitched_prediction.astype(np.float16)
+            images[i, :, :, :] = (input_np * 255).astype(np.uint8)
             ground_truths[i, :, :] = target.numpy()
 
             i += 1
+            if i >= num_examples:
+                break
+        if i >= num_examples:
+            break
+    logger.info("Inference completed successfully.")
  
     logger.info("Saving predictions and ground truths to disk...")
     np.savez_compressed(
         f"{run_id}.npz",
+        images=images,
         predictions=predictions,
         ground_truths=ground_truths,
     )
