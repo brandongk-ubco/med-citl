@@ -12,6 +12,7 @@ test/test_*.png
 .pypi_cache/
 tmp.*
 model.onnx
+*.npz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -6,13 +6,14 @@ import pandas as pd
 import onnxruntime
 from tqdm import tqdm
 import numpy as np
-
+from torchmetrics.classification import JaccardIndex
+import torch
 
 def softmax(x):
-    """Compute softmax values for each sets of scores in x."""
-    e_x = np.exp(x - np.max(x))
-    return e_x / e_x.sum(axis=-1, keepdims=True)
-
+  """Compute softmax values along the first axis (index 0) of a 3D array."""
+  # Keep the max along axis 0 for numerical stability
+  e_x = np.exp(x - np.max(x, axis=0, keepdims=True))
+  return e_x / np.sum(e_x, axis=0, keepdims=True)
 
 @cli.command()
 def inference(run_id: str, dataset: Dataset):
@@ -32,10 +33,19 @@ def inference(run_id: str, dataset: Dataset):
     datamodule = Dataset.get(dataset)()
     datamodule.setup(stage="test")
 
+    jaccard = JaccardIndex(
+        task="multiclass",
+        num_classes=datamodule.num_classes,
+        average="none",
+        ignore_index=0,
+        zero_division=1.0,
+    )
+
     input_name = ort_session.get_inputs()[0].name
     output_name = ort_session.get_outputs()[0].name
 
-    rows = []
+    predictions = []
+    ground_truths = []
 
     for batch in tqdm(datamodule.test_dataloader(), desc="Inferencing"):
         inputs, targets, _index = batch
@@ -47,19 +57,30 @@ def inference(run_id: str, dataset: Dataset):
             target = targets[idx]
 
             input_np = input.numpy()
-            prediction = ort_session.run([output_name], {input_name: input_np})[
-                0
-            ].squeeze()
-            prediction = softmax(prediction).tolist()
-            row = dict(zip(datamodule.classes, prediction))
-            row["label"] = int(target.numpy())
-            row["predicted"] = prediction.index(max(prediction))
-            row["correct"] = row["label"] == row["predicted"]
-            rows.append(row)
+            prediction_0 = ort_session.run([output_name], {input_name: input_np[:,:512,:1024]})
+            prediction_1 = ort_session.run([output_name], {input_name: input_np[:,:512,1024:]})
+            prediction_2 = ort_session.run([output_name], {input_name: input_np[:,512:,:1024]})
+            prediction_3 = ort_session.run([output_name], {input_name: input_np[:,512:,1024:]})
+            
 
-    df = pd.DataFrame(rows)
-    df.to_csv("predictions_pandas.csv", index=False)
-    print("Predictions (with pandas) saved to predictions_pandas.csv")
+            stitched_prediction = np.zeros((datamodule.num_classes, input_np.shape[1], input_np.shape[2]), dtype=prediction_0[0].dtype)
 
-    accuracy = (df["correct"].sum() / len(df)) * 100
-    logger.info(f"Accuracy: {accuracy:.2f}")
+            stitched_prediction[:, :512, :1024] = prediction_0[0]
+            stitched_prediction[:, :512, 1024:] = prediction_1[0]
+            stitched_prediction[:, 512:, :1024] = prediction_2[0]
+            stitched_prediction[:, 512:, 1024:] = prediction_3[0]
+
+            prediction = softmax(stitched_prediction)
+            jaccard(torch.Tensor(prediction).unsqueeze(0), torch.Tensor(target).unsqueeze(0))
+            predictions.append(prediction.astype(np.float16))
+            ground_truths.append(target.numpy())
+
+
+    predictions = np.stack(predictions)
+    ground_truths = np.stack(ground_truths)
+
+    np.savez_compressed(f"{run_id}.npz", predictions=predictions, ground_truths=ground_truths)
+
+    jaccards = dict(zip(datamodule.classes, [n * 100 for n in jaccard.compute().tolist()]))
+    logger.info(f"IoU: {jaccards}")
+    logger.info(f"Mean IoU: {jaccard.compute()[1:].mean() * 100:.2f}")
