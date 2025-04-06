@@ -83,7 +83,7 @@ class CelebADataModule(L.LightningDataModule):
 
     def __init__(
         self,
-        augmentation_policy_path,
+        augmentation_policy_path: str = "./policies/noop.yaml",
         batch_size=128,
         data_dir=PATH_DATASETS,
         image_size=176,

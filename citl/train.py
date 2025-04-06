@@ -88,7 +88,7 @@ def train(
         lr=lr,
         method=method,
         loss_function=loss_function,
-        ignore_index=datamodule.ignore_index
+        ignore_index=datamodule.ignore_index,
     )
 
     policy, _ = os.path.splitext(os.path.basename(augmentation_policy_path))

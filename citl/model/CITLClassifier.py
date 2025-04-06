@@ -21,7 +21,7 @@ class CITLClassifier(L.LightningModule):
         lr_method="plateau",
         method="score",
         loss_function="cross_entropy",
-        ignore_index=-100
+        ignore_index=-100,
     ):
         super().__init__()
         self.save_hyperparameters(ignore=["model"])

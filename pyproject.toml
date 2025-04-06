@@ -48,6 +48,7 @@ dependencies = [
     "pytorch-lightning==2.5.0",
     "segmentation-models-pytorch>=0.4.0",
     "torchinfo>=1.8.0",
+    "onnxruntime-gpu>=1.21.0",
 ]
 
 [dependency-groups]

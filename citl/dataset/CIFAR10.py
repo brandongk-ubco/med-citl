@@ -62,7 +62,7 @@ class CIFAR10DataModule(L.LightningDataModule):
 
     def __init__(
         self,
-        augmentation_policy_path,
+        augmentation_policy_path: str = "./policies/noop.yaml",
         batch_size: int = 128,
         data_dir: str = PATH_DATASETS,
     ):

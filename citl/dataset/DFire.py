@@ -63,7 +63,10 @@ class DFireDataModule(L.LightningDataModule):
     ignore_index = -100
 
     def __init__(
-        self, augmentation_policy_path, batch_size=128, data_dir: str = PATH_DATASETS
+        self,
+        augmentation_policy_path: str = "./policies/noop.yaml",
+        batch_size=128,
+        data_dir: str = PATH_DATASETS,
     ):
         super().__init__()
 
