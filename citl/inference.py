@@ -98,12 +98,14 @@ def inference(run_id: str, dataset: Dataset):
             ground_truths[i, :, :] = target.numpy()
 
             i += 1
-
+ 
+    logger.info("Saving predictions and ground truths to disk...")
     np.savez_compressed(
         f"{run_id}.npz",
-        predictions=np.stack(predictions),
-        ground_truths=np.stack(ground_truths),
+        predictions=predictions,
+        ground_truths=ground_truths,
     )
+    logger.info("Predictions and ground truths saved successfully.")
 
     jaccards = dict(
         zip(datamodule.classes, [n * 100 for n in jaccard.compute().tolist()])
